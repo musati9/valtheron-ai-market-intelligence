@@ -270,3 +270,7 @@ async def analyze_market(symbol: str):
             "No trading outcome is guaranteed.",
         ],
 }
+@app.get("/", response_class=HTMLResponse)
+async def home():
+    with open("static/index.html", encoding="utf-8") as file:
+        return file.read()
