@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valtheron AI Market Intelligence</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #0b1120;
+            color: #edf2f7;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            padding: 24px 16px;
+            background: #111b30;
+            border-bottom: 1px solid #293750;
+        }
+
+        .brand {
+            color: #e8bd63;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            color: #a8b5ca;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: auto;
+            padding: 20px 14px;
+        }
+
+        .notice {
+            background: #282519;
+            color: #f5d98e;
+            padding: 13px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            margin: 22px 0 12px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+            gap: 12px;
+        }
+
+        .card {
+            background: #131e32;
+            border: 1px solid #293750;
+            border-radius: 10px;
+            padding: 16px;
+            min-width: 0;
+        }
+
+        .symbol {
+            color: #e8bd63;
+            font-weight: bold;
+            font-size: 17px;
+        }
+
+        .price {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 15px 0 8px;
+            overflow-wrap: anywhere;
+        }
+
+        .muted {
+            color: #9aaac0;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        button {
+            background: #d5a94f;
+            border: none;
+            color: #101827;
+            padding: 10px 12px;
+            margin-top: 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+        }
+
+        #status {
+            color: #a8b5ca;
+            font-size: 13px;
+            margin: 12px 0;
+        }
+
+        #analysis {
+            white-space: pre-wrap;
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        footer {
+            color: #8493a9;
+            text-align: center;
+            padding: 25px 12px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <div class="brand">VALTHERON</div>
+    <div class="subtitle">AI Market Intelligence · Research Dashboard</div>
+</header>
+
+<main>
+    <div class="notice">
+        <strong>DATA NOTICE:</strong>
+        This dashboard uses daily market data, not guaranteed live prices.
+        Data may be delayed or unavailable. Research information is educational
+        and is not a guarantee of trading results.
+    </div>
+
+    <h2 class="section-title">Market Watchlist</h2>
+    <div id="status">Connecting to the market data service...</div>
+    <div class="grid" id="markets"></div>
+
+    <h2 class="section-title">Market Research</h2>
+    <div class="card">
+        <div class="muted">
+            Select a market below to view its preliminary momentum assessment.
+        </div>
+
+        <div style="margin-top: 15px;">
+            <label for="asset">Select market: </label>
+            <select id="asset"
+                style="background:#0b1120;color:white;padding:9px;border:1px solid #293750;border-radius:5px;">
+                <option value="EURUSD">EUR/USD</option>
+                <option value="GBPUSD">GBP/USD</option>
+                <option value="USDJPY">USD/JPY</option>
+                <option value="AAPL">Apple (AAPL)</option>
+                <option value="BTC">Bitcoin (BTC)</option>
+                <option value="ETH">Ethereum (ETH)</option>
+            </select>
+        </div>
+
+        <button id="analyzeButton" onclick="analyzeMarket()">
+            Analyse Market
+        </button>
+
+        <div id="analysis" style="margin-top:18px;">
+            Your market assessment will appear here.
+        </div>
+    </div>
+</main>
+
+<footer>
+    VALTHERON AI MARKET INTELLIGENCE<br>
+    Independent market research · Educational use only
+</footer>
+
+<script>
+    const symbols = [
+        "EURUSD", "GBPUSD", "USDJPY",
+        "AAPL", "BTC", "ETH"
+    ];
+
+    async function loadMarkets() {
+        const container = document.getElementById("markets");
+        const status = document.getElementById("status");
+
+        container.innerHTML = "";
+        status.textContent = "Loading daily market data...";
+
+        let successful = 0;
+
+        for (const symbol of symbols) {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+                <div class="symbol">${symbol}</div>
+                <div class="price">Loading...</div>
+                <div class="muted">Daily data requested</div>
+            `;
+            container.appendChild(card);
+
+            try {
+                const response = await fetch(
+                    `/api/market/${encodeURIComponent(symbol)}`
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || "Data unavailable");
+                }
+
+                const price = Number(data.price);
+                const change = Number(data.change_percent);
+
+                card.innerHTML = `
+                    <div class="symbol">${symbol}</div>
+                    <div class="price">
+                        ${Number.isFinite(price) ? price.toLocaleString(
+                            "en-US", { maximumFractionDigits: 5 }
+                        ) : "Unavailable"}
+                    </div>
+                    <div class="muted">
+                        Daily change:
+                        ${Number.isFinite(change) ? change.toFixed(2) + "%" : "N/A"}
+                    </div>
+                    <div class="muted" style="margin-top:8px;">
+                        ${data.date ? "Date: " + data.date : "Date unavailable"}
+                    </div>
+                    <div class="muted">Not a live quote</div>
+                `;
+
+                successful++;
+            } catch (error) {
+                card.innerHTML = `
+                    <div class="symbol">${symbol}</div>
+                    <div class="price">Unavailable</div>
+                    <div class="muted">
+                        Data could not be loaded. Check the API configuration
+                        or provider limits.
+                    </div>
+                `;
+            }
+        }
+
+        status.textContent =
+            `${successful} of ${symbols.length} markets loaded. ` +
+            "Provider limits may affect availability.";
+    }
+
+    async function analyzeMarket() {
+        const symbol = document.getElementById("asset").value;
+        const output = document.getElementById("analysis");
+        const button = document.getElementById("analyzeButton");
+
+        output.textContent = "Preparing market assessment...";
+        button.disabled = true;
+
+        try {
+            const response = await fetch(
+                `/api/analyze/${encodeURIComponent(symbol)}`
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || "Analysis unavailable");
+            }
+
+            output.textContent = JSON.stringify(data, null, 2);
+        } catch (error) {
+            output.textContent =
+                "Analysis could not be loaded.\n\n" +
+                error.message +
+                "\n\nCheck the backend, API key, and data-provider limits.";
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    loadMarkets();
+</script>
+</body>
+</html>
